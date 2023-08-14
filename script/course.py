@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 import math
 import numpy as np
 from robot_type import RobotType
@@ -6,7 +7,8 @@ from util import Path
 
 class DriveCourse:
     def __init__(self, cfg):
-        
+
+        ## Robot parameter
         self.robot_radius = cfg.robot_radius # [m]
         self.robot_width = cfg.robot_width # [m]
         self.robot_length = cfg.robot_length  # [m]
@@ -15,11 +17,11 @@ class DriveCourse:
         else:
             self.robot_type = RobotType.rectangle
         
+        ## World parameter
         self.plot_y_min = -2
         self.plot_y_max = 20
         self.plot_x_min = -2
         self.plot_x_max = 20
-    
         self.inital_pose, self.goal, self.path = self._generate_path(road_pattern=0) 
         self.obstacle = self._generate_obstacle()
         
@@ -28,26 +30,6 @@ class DriveCourse:
     
     def get_goal_pose(self):
         return self.goal
-
-    def _generate_obstacle(self):
-        ob = np.array([[-1, -1],
-                        [0, 2],
-                        [4.0, 2.0],
-                        [5.0, 4.0],
-                        [5.0, 5.0],
-                        [5.0, 6.0],
-                        [5.0, 9.0],
-                        [8.0, 9.0],
-                        [7.0, 9.0],
-                        [8.0, 10.0],
-                        [9.0, 11.0],
-                        [12.0, 13.0],
-                        [12.0, 12.0],
-                        [15.0, 15.0],
-                        [13.0, 13.0]
-                        ])
-        return ob
-    
 
     def get_obstacle_pose(self):
         return self.obstacle
@@ -76,7 +58,10 @@ class DriveCourse:
         plt.plot(trajectory[:, 0], trajectory[:, 1], "-g")
         plt.plot(x[0], x[1], "xr")
         plt.plot(self.goal[0], self.goal[1], "xb")
-        plt.plot(obstacle[:, 0], obstacle[:, 1], "ok")
+        #plt.plot(obstacle[:, 0], obstacle[:, 1], "ok")
+        self._plot_obstacle(obstacle)
+        
+        self._plot_path(self.path)
         
         self._plot_robot(x[0], x[1], x[2])
         self._plot_arrow(x[0], x[1], x[2])
@@ -111,32 +96,53 @@ class DriveCourse:
                             np.array([np.cos(yaw), np.sin(yaw)]) * self.robot_radius)
             plt.plot([x, out_x], [y, out_y], "-k")
         
+    def _plot_obstacle(self, obstacles):
+        for ob in obstacles:
+            plt.gca().add_patch(Rectangle((ob[0]- ob[2]/2, ob[1]- ob[3]/2), ob[2], ob[3]))
 
     def _plot_arrow(self, x, y, yaw, length=0.5, width=0.1):
         plt.arrow(x, y, length * math.cos(yaw), length * math.sin(yaw),
                 head_length=width, head_width=width)
         plt.plot(x, y)
 
+    def _plot_path(self, path):
+        plt.plot(path.left_bound[:, 0], path.left_bound[:, 1], linewidth=4, color="black")
+        plt.plot(path.right_bound[:, 0], path.right_bound[:, 1], linewidth=4, color="black")
 
     def _generate_path(self, road_pattern=0):
         path = Path()
+        
+        course_angle = 90
+        self.path_radian = np.radians(course_angle)
+
         if road_pattern == 0:
-            point_num = 5
             road_center = 7.5
             road_width = 5.0
-            road_length = 15.0
+            road_length = 30.0
+            point_num = int(road_length * 5)
             longitudinal_interval = float(road_length/ point_num)
             
             # initial state [x(m), y(m), yaw(rad), v(m/s), omega(rad/s)]
             initial_pose = np.array([road_center, 0.0, math.pi / 2.0, 0.0, 0.0])
-            goal_pose = np.array([road_center, 10])
+            goal_pose = np.array([road_center, 18])
             x1 = [road_center - road_width / 2.0 for i in range(point_num)]
             y1 = [self.plot_y_min + (i * longitudinal_interval) for i in range(point_num)]
 
             x2 = [road_center + road_width / 2.0 for i in range(point_num)]
             y2 = [self.plot_y_min + (i * longitudinal_interval) for i in range(point_num)]
-                        
+            
             path.left_bound = np.array(list(zip(x1, y1)))
             path.right_bound = np.array(list(zip(x2, y2)))
-
+            
         return initial_pose, goal_pose, path
+
+    def _generate_obstacle(self):
+        obstacle_width = 2.5
+        obstacle_height = 0.5
+        ob = np.array([[6.25, 5.25, obstacle_width, obstacle_height, self.path_radian],
+                       [8.75, 10.25, obstacle_width, obstacle_height, self.path_radian],
+                       [6.25, 15.25, obstacle_width, obstacle_height, self.path_radian]
+                       ])
+        return ob
+    
+    

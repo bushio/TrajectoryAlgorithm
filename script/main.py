@@ -23,6 +23,7 @@ def main(cfg):
     print(__file__ + " start!!")
     
     game = DriveCourse(cfg)
+    path = game.path
     x = game.get_initial_pose()
     trajectory = np.array(x)
     goal = game.get_goal_pose()
@@ -30,7 +31,7 @@ def main(cfg):
     dwa = DynamicWindowApproach(cfg)
     
     while True:
-        u, predicted_trajectory = dwa.get_next_step(x, goal, obstacle)
+        u, predicted_trajectory = dwa.get_next_step(x, goal, obstacle, path)
         x, finish = game.update(x, u, cfg.dt)
         trajectory = np.vstack((trajectory, x))  # store state history
 

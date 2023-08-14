@@ -38,7 +38,7 @@ class DynamicWindowApproach:
         self.robot_length = config.robot_length  # [m]
         self.robot_stuck_flag_cons = config.robot_stuck_flag_cons
         
-    def get_next_step(self, x, goal, obstacle):
+    def get_next_step(self, x, goal, obstacle, path):
         """
         Return next control and trajectory
         """
@@ -46,7 +46,7 @@ class DynamicWindowApproach:
         # Calcuration dynamic window by self property
         motion_dw = self._calc_dynamic_window(x)
         
-        u, trajectory = self.calc_control_and_trajectory(x, motion_dw, goal,  obstacle)
+        u, trajectory = self.calc_control_and_trajectory(x, motion_dw, goal,  obstacle, path)
         return u, trajectory
     
     
@@ -72,7 +72,7 @@ class DynamicWindowApproach:
         return dw
     
 
-    def calc_control_and_trajectory(self, x, dw, goal, ob):
+    def calc_control_and_trajectory(self, x, dw, goal, ob, path):
         """
         calculation final input with dynamic window
         """
@@ -90,8 +90,10 @@ class DynamicWindowApproach:
                 to_goal_cost = self.to_goal_cost_gain * self._calc_target_heading_cost(trajectory[-1], goal)
                 speed_cost = self.speed_cost_gain * (self.max_speed - trajectory[-1, 3])
                 ob_cost = self.obstacle_cost_gain * self._calc_obstacle_cost(trajectory, ob)
+                
+                path_cost = self.obstacle_cost_gain * self._calc_path_cost(trajectory, path)
 
-                final_cost = to_goal_cost + speed_cost + ob_cost
+                final_cost = to_goal_cost + speed_cost + ob_cost + path_cost
 
                 # search minimum trajectory
                 if min_cost >= final_cost:
@@ -149,33 +151,100 @@ class DynamicWindowApproach:
         return cost
 
 
-    def _calc_obstacle_cost(self, trajectory, ob):
-        """
-        calc obstacle cost inf: collision
-        """
-        ox = ob[:, 0]
-        oy = ob[:, 1]
-        dx = trajectory[:, 0] - ox[:, None]
-        dy = trajectory[:, 1] - oy[:, None]
-        r = np.hypot(dx, dy)
+    def _calc_obstacle_cost(self, trajectory, objects):        
+        object_xy = objects[:, 0:2]
+        object_wh = objects[:, 2:4]
+        
+        dist_threshold = 5.0
+        min_dist = float("Inf")
+       
+        ## Distance between object and trajectory points
+        for tp in trajectory:
 
-        yaw = trajectory[:, 2]
-        rot = np.array([[np.cos(yaw), -np.sin(yaw)], [np.sin(yaw), np.cos(yaw)]])
-        rot = np.transpose(rot, [2, 0, 1])
-        local_ob = ob[:, None] - trajectory[:, 0:2]
-        local_ob = local_ob.reshape(-1, local_ob.shape[-1])
-        local_ob = np.array([local_ob @ x for x in rot])
-        local_ob = local_ob.reshape(-1, local_ob.shape[-1])
-        upper_check = local_ob[:, 0] <= self.robot_length / 2
-        right_check = local_ob[:, 1] <= self.robot_width / 2
-        bottom_check = local_ob[:, 0] >= -self.robot_length / 2
-        left_check = local_ob[:, 1] >= -self.robot_width / 2
-        if (np.logical_and(np.logical_and(upper_check, right_check),
-                        np.logical_and(bottom_check, left_check))).any():
-            return float("Inf")
+            ox = objects[:, 0]
+            oy = objects[:, 1]
+            dx = tp[0] - ox
+            dy = tp[1] - oy
+            dist = np.hypot(dx, dy)
+            
+            if min_dist < np.min(dist):
+                min_dist = dist
+            
+            # Mask with distance
+            mask = dist < dist_threshold
+            object_xy_mask = object_xy[mask, :]
+            object_wh_mask = object_wh[mask, :]
+            
+            ## Rotation matrix
+            #yaw = tp[2]
+            #rot = np.array([[np.cos(yaw), -np.sin(yaw)], [np.sin(yaw), np.cos(yaw)]])
+            
+            object_xy_new = object_xy_mask - tp[0:2]
+            #object_xy_new = object_xy_new @ rot
+            object_xy_new_upper_right = object_xy_new + object_wh_mask / 2
+            object_xy_new_bottom_left = object_xy_new - object_wh_mask / 2
+            
+            right_check = object_xy_new_bottom_left[:, 0] >= self.robot_width / 2
+            left_check = object_xy_new_upper_right[:, 0] <= -self.robot_width / 2
+            top_check = object_xy_new_bottom_left[:, 1] >= self.robot_length / 2
+            bottom_check = object_xy_new_upper_right[:, 1] <= -self.robot_length / 2
+            
+            check = np.prod(np.logical_or(np.logical_or(top_check, bottom_check), np.logical_or(right_check, left_check)))
+            if not check:
+                #print("collision")
+                return float("Inf")
+            
+        return 1.0 / min_dist  # OK
+        
 
-        min_r = np.min(r)
-        return 1.0 / min_r  # OK
+    def _calc_path_cost(self, trajectory, path):
+        
+        path_points = np.concatenate([path.left_bound, path.right_bound])
+        object_xy = path_points[:, 0:2]
+        points_size = np.array([0.1, 0.1])
+
+        dist_threshold = 10.0
+        weights = float("Inf") #1000.0
+        min_dist = float("Inf")
+        
+       
+        ## Distance between object and trajectory points
+        for idx, tp in enumerate(trajectory):
+
+            ox = path_points[:, 0]
+            oy = path_points[:, 1]
+            dx = tp[0] - ox
+            dy = tp[1] - oy
+            dist = np.hypot(dx, dy)
+            
+            if min_dist < np.min(dist):
+                min_dist = dist
+            
+            # Mask with distance
+            mask = dist < dist_threshold
+            object_xy_mask = object_xy[mask, :]
+            
+            object_xy_new = object_xy_mask - tp[0:2]
+            #object_xy_new = object_xy_new @ rot
+            object_xy_new_upper_right = object_xy_new + points_size
+            object_xy_new_bottom_left = object_xy_new - points_size
+            
+            right_check = object_xy_new_bottom_left[:, 0] >= self.robot_width / 2
+            left_check = object_xy_new_upper_right[:, 0] <= -self.robot_width / 2
+            top_check = object_xy_new_bottom_left[:, 1] >= self.robot_length / 2
+            bottom_check = object_xy_new_upper_right[:, 1] <= -self.robot_length / 2
+            
+            check = np.prod(np.logical_or(np.logical_or(top_check, bottom_check), np.logical_or(right_check, left_check)))
+            if not check:
+                #print("collision")
+                return weights/(idx + 1)
+            
+        return 1.0 / min_dist  # OK
+ 
+            
+
+            
+        
 
 
     
