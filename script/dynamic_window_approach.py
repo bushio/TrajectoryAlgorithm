@@ -34,6 +34,8 @@ class DynamicWindowApproach:
         # If the distance between object and robot more than threshold , cost is ignored.
         self.ob_dist_threshold = cfg.ob_dist_threshold
         self.path_dist_threshold = cfg.path_dist_threshold
+        self.ob_penalty = cfg.ob_penalty
+        self.path_penalty = cfg.path_penalty
         
         ## Trajectory precition time 
         self.predict_time = cfg.predict_time
@@ -97,8 +99,11 @@ class DynamicWindowApproach:
                 ## Calculate cost
                 to_goal_cost = self.to_goal_cost_gain * self._calc_target_heading_cost(trajectory[-1], goal)
                 speed_cost = self.speed_cost_gain * (self.max_speed - trajectory[-1, 3])
-                ob_cost = self.obstacle_cost_gain * self._calc_obstacle_cost(trajectory, ob)
-                path_cost = self.path_cost_gain * self._calc_path_cost(trajectory, path)
+                ob_cost = self.obstacle_cost_gain * self._calc_obstacle_cost(
+                    trajectory, ob, dist_threshold=self.ob_dist_threshold, penalty=self.ob_penalty)
+                
+                path_cost = self.path_cost_gain * self._calc_path_cost(
+                        trajectory, path, dist_threshold=self.path_dist_threshold, penalty=self.path_penalty)
 
                 final_cost = to_goal_cost + speed_cost + ob_cost + path_cost
 
@@ -161,43 +166,49 @@ class DynamicWindowApproach:
     def _calc_obstacle_cost(self, trajectory, objects, dist_threshold=5.0, penalty=-1):        
         object_xy = objects[:, 0:2]
         object_wh = objects[:, 2:4]
-        
         min_dist = float("Inf")
         if penalty == -1:
             penalty = float("Inf")
        
         ## Distance between object and trajectory points
         for tp in trajectory:
-
             ox = objects[:, 0]
             oy = objects[:, 1]
             dx = tp[0] - ox
             dy = tp[1] - oy
             dist = np.hypot(dx, dy)
             
-            if min_dist < np.min(dist):
-                min_dist = dist
-            
             # Mask with distance
             mask = dist < dist_threshold
             object_xy_mask = object_xy[mask, :]
+            
+            if min_dist < np.min(dist):
+                min_dist = dist
+
+            if not object_xy_mask.any():
+                continue
+            
             object_wh_mask = object_wh[mask, :]
             
             ## Rotation matrix
             #yaw = tp[2]
             #rot = np.array([[np.cos(yaw), -np.sin(yaw)], [np.sin(yaw), np.cos(yaw)]])
+            #rot_size = np.array([[np.cos(yaw), 0], [0, np.sin(yaw)]])
             
+
+            #object_xy_new = np.dot(rot, object_xy_mask.T).transpose(1,0)
             object_xy_new = object_xy_mask - tp[0:2]
-            #object_xy_new = object_xy_new @ rot
+            #object_wh_mask = np.abs(np.dot(rot_size, object_wh_mask.T).transpose(1,0))
+
             object_xy_new_upper_right = object_xy_new + object_wh_mask / 2
             object_xy_new_bottom_left = object_xy_new - object_wh_mask / 2
             
-            right_check = object_xy_new_bottom_left[:, 0] >= self.robot_width / 2
+            right_check = object_xy_new_bottom_left[:, 0]>= self.robot_width / 2
             left_check = object_xy_new_upper_right[:, 0] <= -self.robot_width / 2
             top_check = object_xy_new_bottom_left[:, 1] >= self.robot_length / 2
             bottom_check = object_xy_new_upper_right[:, 1] <= -self.robot_length / 2
             
-            check = np.prod(np.logical_or(np.logical_or(top_check, bottom_check), np.logical_or(right_check, left_check)))
+            check = np.all(np.logical_or(np.logical_or(top_check, bottom_check), np.logical_or(right_check, left_check)))
             if not check:
                 return penalty
         return 1.0 / min_dist  # OK
@@ -220,14 +231,17 @@ class DynamicWindowApproach:
             dx = tp[0] - ox
             dy = tp[1] - oy
             dist = np.hypot(dx, dy)
-            
-            if min_dist < np.min(dist):
-                min_dist = dist
-            
+
             # Mask with distance
             mask = dist < dist_threshold
             object_xy_mask = object_xy[mask, :]
-            
+
+            if min_dist < np.min(dist):
+                min_dist = dist
+
+            if not object_xy_mask.any():
+                continue
+                
             object_xy_new = object_xy_mask - tp[0:2]
             #object_xy_new = object_xy_new @ rot
             object_xy_new_upper_right = object_xy_new + points_size
@@ -239,6 +253,7 @@ class DynamicWindowApproach:
             bottom_check = object_xy_new_upper_right[:, 1] <= -self.robot_length / 2
             
             check = np.prod(np.logical_or(np.logical_or(top_check, bottom_check), np.logical_or(right_check, left_check)))
+            
             if not check:
                 #print("collision")
                 return penalty/(idx + 1)

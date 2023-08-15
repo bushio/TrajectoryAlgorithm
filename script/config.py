@@ -40,12 +40,15 @@ class Config:
         # Resolution of translational motion
         self.v_resolution = 0.01  # [m/s]
         self.predict_time = 3.0  # [s]
-        self.to_goal_cost_gain = 0.5
-        self.speed_cost_gain = 0.5
+        self.to_goal_cost_gain = 1.0
+        self.speed_cost_gain = 1.0
         self.obstacle_cost_gain = 1.0
-        self.path_cost_gain = 1.0
+        self.path_cost_gain = 0.0
         self.robot_stuck_flag_cons = 0.001  # constant to prevent robot stucked
         
         # If the distance between object and robot more than threshold , cost is ignored.
         self.ob_dist_threshold = 5.0
         self.path_dist_threshold = 5.0
+
+        self.ob_penalty = 100
+        self.path_penalty = 100
