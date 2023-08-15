@@ -54,8 +54,15 @@ class Course:
         return initial_pose, goal_pose, path
 
     def _generate_obstacle(self):
-        
         if self.obstacle_pattern ==0:
+            """ pattern=0
+            |  G  |
+            |   --|  
+            |     |
+            |--   |
+            |     |
+            |  S  |
+            """
             left_ob_x = self.path.center_line - self.path.width / 4
             right_ob_x = self.path.center_line + self.path.width / 4
             nearest_ob_y = 5.25
@@ -63,7 +70,16 @@ class Course:
             ob = np.array([[left_ob_x, nearest_ob_y, self.obstacle_width, self.obstacle_height],
                         [right_ob_x, nearest_ob_y + ob_interval, self.obstacle_width, self.obstacle_height]
                         ])
+
         elif self.obstacle_pattern ==1:
+            """ pattern=1
+            |  G  |
+            |--   |  
+            |     |
+            |   --|
+            |     |
+            |  S  |
+            """
             left_ob_x = self.path.center_line - self.path.width / 4
             right_ob_x = self.path.center_line + self.path.width / 4
             nearest_ob_y = 5.25
@@ -72,6 +88,16 @@ class Course:
                         [left_ob_x, nearest_ob_y + ob_interval, self.obstacle_width, self.obstacle_height]
                         ])
         else:
+            """ pattern=1
+            |  G  |
+            |--   |  
+            |     |
+            |   --|
+            |     |
+            |--   |
+            |     |
+            |  S  |
+            """
             left_ob_x = self.path.center_line - self.path.width / 4
             right_ob_x = self.path.center_line + self.path.width / 4
             nearest_ob_y = 5.25
