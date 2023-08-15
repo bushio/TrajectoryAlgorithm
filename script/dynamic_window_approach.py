@@ -154,12 +154,13 @@ class DynamicWindowApproach:
         return cost
 
 
-    def _calc_obstacle_cost(self, trajectory, objects):        
+    def _calc_obstacle_cost(self, trajectory, objects, dist_threshold=5.0, penalty=-1):        
         object_xy = objects[:, 0:2]
         object_wh = objects[:, 2:4]
         
-        dist_threshold = 5.0
         min_dist = float("Inf")
+        if penalty == -1:
+            penalty = float("Inf")
        
         ## Distance between object and trajectory points
         for tp in trajectory:
@@ -194,26 +195,22 @@ class DynamicWindowApproach:
             
             check = np.prod(np.logical_or(np.logical_or(top_check, bottom_check), np.logical_or(right_check, left_check)))
             if not check:
-                #print("collision")
-                return float("Inf")
-            
+                return penalty
         return 1.0 / min_dist  # OK
         
 
-    def _calc_path_cost(self, trajectory, path):
+    def _calc_path_cost(self, trajectory, path, path_point_size=0.1, dist_threshold=5.0, penalty=-1):
         
         path_points = np.concatenate([path.left_bound, path.right_bound])
         object_xy = path_points[:, 0:2]
-        points_size = np.array([0.1, 0.1])
+        points_size = np.array([path_point_size, path_point_size])
 
-        dist_threshold = 10.0
-        weights = float("Inf") #1000.0
+        if penalty == -1:
+            penalty = float("Inf")
         min_dist = float("Inf")
-        
-       
+
         ## Distance between object and trajectory points
         for idx, tp in enumerate(trajectory):
-
             ox = path_points[:, 0]
             oy = path_points[:, 1]
             dx = tp[0] - ox
@@ -240,7 +237,7 @@ class DynamicWindowApproach:
             check = np.prod(np.logical_or(np.logical_or(top_check, bottom_check), np.logical_or(right_check, left_check)))
             if not check:
                 #print("collision")
-                return weights/(idx + 1)
+                return penalty/(idx + 1)
             
         return 1.0 / min_dist  # OK
  
