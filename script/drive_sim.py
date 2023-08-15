@@ -3,8 +3,7 @@ from matplotlib.patches import Rectangle
 import math
 import numpy as np
 from robot_type import RobotType
-from util import Path
-from course import Course
+from course import Course, Path
 
 class DriveSim:
     def __init__(self, cfg):
@@ -36,23 +35,40 @@ class DriveSim:
         ## Generate Path
         self.inital_pose, self.goal, self.path, self.obstacle = course_generater.get_course()       
         
-    def get_initial_pose(self):
+    def get_initial_pose(self) -> np.array:
+        """
+        Return the initial robot pose
+        """
         return self.inital_pose
     
-    def get_goal_pose(self):
+    def get_goal_pose(self) -> np.array:
+        """
+        Return the goal pose
+        """
         return self.goal
 
-    def get_obstacle_pose(self):
+    def get_obstacle_pose(self) -> np.array:
+        """
+        Return the obstacle pose
+        """
         return self.obstacle
     
     def update(self, x, u, dt):
-        x[2] += u[1] * dt
+        """
+        Update robot pose and check if it has reached goal.
+        """
+        
+        ## translational movement
+        ### x[0]: x value of the robot pose
+        ### x[1]: y value of the robot pose
+        
         x[0] += u[0] * math.cos(x[2]) * dt
         x[1] += u[0] * math.sin(x[2]) * dt
+        x[2] += u[1] * dt
         x[3] = u[0]
         x[4] = u[1]
             
-        # check reaching goal
+        ## Check reaching goal
         dist_to_goal = math.hypot(x[0] - self.goal[0], x[1] - self.goal[1])
         if dist_to_goal <= self.robot_radius:
             print("Goal!!")
@@ -60,7 +76,7 @@ class DriveSim:
             
         return x, False
     
-    def update_animation(self, x, obstacle, trajectory):
+    def update_animation(self, x: np.array, obstacle: np.array, trajectory: np.array):
         plt.cla()
         # for stopping simulation with the esc key.
         plt.gcf().canvas.mpl_connect(
@@ -69,7 +85,6 @@ class DriveSim:
         plt.plot(trajectory[:, 0], trajectory[:, 1], "-g")
         plt.plot(x[0], x[1], "xr")
         plt.plot(self.goal[0], self.goal[1], "xb")
-        #plt.plot(obstacle[:, 0], obstacle[:, 1], "ok")
         self._plot_obstacle(obstacle)
         
         self._plot_path(self.path)
@@ -77,15 +92,15 @@ class DriveSim:
         self._plot_robot(x[0], x[1], x[2])
         self._plot_arrow(x[0], x[1], x[2])
         
-        #plt.axis("equal")
         plt.xlim(self.plot_x_min, self.plot_x_max)
         plt.ylim(self.plot_y_min, self.plot_y_max)
         plt.grid(True)
-        
         plt.pause(0.0001)
 
-    def _plot_robot(self, x, y, yaw):  # pragma: no cover
-        
+    def _plot_robot(self, x: np.array, y: np.array, yaw: np.array):
+        """
+        Plot robot pose
+        """
         if self.robot_type == RobotType.rectangle:
             outline = np.array([[-self.robot_length / 2, self.robot_length / 2,
                                 (self.robot_length / 2), -self.robot_length / 2,
@@ -107,51 +122,23 @@ class DriveSim:
                             np.array([np.cos(yaw), np.sin(yaw)]) * self.robot_radius)
             plt.plot([x, out_x], [y, out_y], "-k")
         
-    def _plot_obstacle(self, obstacles):
+    def _plot_obstacle(self, obstacles: np.array):
+        """
+        Plot obstacle pose
+        """
         for ob in obstacles:
             plt.gca().add_patch(Rectangle((ob[0]- ob[2]/2, ob[1]- ob[3]/2), ob[2], ob[3]))
 
-    def _plot_arrow(self, x, y, yaw, length=0.5, width=0.1):
+    def _plot_arrow(self, x: np.array, y: np.array, yaw: np.array, length=0.5, width=0.1):
+        """
+        Plot obstacle pose
+        """
         plt.arrow(x, y, length * math.cos(yaw), length * math.sin(yaw),
                 head_length=width, head_width=width)
         plt.plot(x, y)
 
-    def _plot_path(self, path):
+    def _plot_path(self, path: Path):
         plt.plot(path.left_bound[:, 0], path.left_bound[:, 1], linewidth=4, color="black")
         plt.plot(path.right_bound[:, 0], path.right_bound[:, 1], linewidth=4, color="black")
-
-    def _generate_path(self, point_interval=0.2, road_pattern=0):
-        
-        
-        course_angle = 90
-        self.path_radian = np.radians(course_angle)
-
-        if road_pattern == 0:
-            path = Path(length = 30.0, width = 5.0, center_line = 7.5)
-            point_num = int(path.length * int(1 / point_interval))
-            longitudinal_interval = float(path.length/ point_num)
-            
-            # initial state [x(m), y(m), yaw(rad), v(m/s), omega(rad/s)]
-            initial_pose = np.array([path.center_line, 0.0, math.pi / 2.0, 0.0, 0.0])
-            goal_pose = np.array([path.center_line, 18])
-            x1 = [path.center_line - path.width / 2.0 for i in range(point_num)]
-            y1 = [self.plot_y_min + (i * longitudinal_interval) for i in range(point_num)]
-
-            x2 = [path.center_line + path.width / 2.0 for i in range(point_num)]
-            y2 = [self.plot_y_min + (i * longitudinal_interval) for i in range(point_num)]
-            
-            path.left_bound = np.array(list(zip(x1, y1)))
-            path.right_bound = np.array(list(zip(x2, y2)))
-            
-        return initial_pose, goal_pose, path
-
-    def _generate_obstacle(self):
-        obstacle_width = 2.5
-        obstacle_height = 0.5
-        ob = np.array([[6.25, 5.25, obstacle_width, obstacle_height, self.path_radian],
-                       [8.75, 10.25, obstacle_width, obstacle_height, self.path_radian],
-                       [6.25, 15.25, obstacle_width, obstacle_height, self.path_radian]
-                       ])
-        return ob
     
     

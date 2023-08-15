@@ -11,18 +11,17 @@ import numpy as np
 
 class DynamicWindowApproach:
     def __init__(self, config):
+        ## Robot parameter
         self.min_speed = config.min_speed
         self.max_speed = config.max_speed
-        
         self.max_yaw_rate = config.max_yaw_rate
         self.max_yaw_rate = config.max_yaw_rate
-       
-       
         self.max_accel = config.max_accel
         self.max_delta_yaw_rate = config.max_delta_yaw_rate
         
         self.dt = config.dt
         
+        ## Search range
         self.v_resolution = config.v_resolution
         self.yaw_rate_resolution = config.yaw_rate_resolution
         
@@ -55,14 +54,14 @@ class DynamicWindowApproach:
     
     def _calc_dynamic_window(self, x):
         """
-        calculation dynamic window based on current state x
+        Calculation dynamic window based on current state x
         """
 
-        # Dynamic window from robot specification
+        ## Dynamic window from robot specification
         Vs = [self.min_speed, self.max_speed,
             -self.max_yaw_rate, self.max_yaw_rate]
 
-        # Dynamic window from motion model
+        ## Dynamic window from motion model
         Vd = [x[3] - self.max_accel * self.dt,
             x[3] + self.max_accel * self.dt,
             x[4] - self.max_delta_yaw_rate * self.dt,
@@ -77,19 +76,21 @@ class DynamicWindowApproach:
 
     def calc_control_and_trajectory(self, x, dw, goal, ob, path):
         """
-        calculation final input with dynamic window
+        Calculation final input with dynamic window
         """
         x_init = x[:]
         min_cost = float("inf")
         best_u = [0.0, 0.0]
         best_trajectory = np.array([x])
 
-        # evaluate all trajectory with sampled input in dynamic window
+        ## Evaluate all trajectory with sampled input in dynamic window
         for v in np.arange(dw[0], dw[1], self.v_resolution):
             for y in np.arange(dw[2], dw[3], self.yaw_rate_resolution):
-
+                
+                ## Get next trajectory
                 trajectory = self.predict_trajectory(x_init, v, y)
-                # calc cost
+                
+                ## Calculate cost
                 to_goal_cost = self.to_goal_cost_gain * self._calc_target_heading_cost(trajectory[-1], goal)
                 speed_cost = self.speed_cost_gain * (self.max_speed - trajectory[-1, 3])
                 ob_cost = self.obstacle_cost_gain * self._calc_obstacle_cost(trajectory, ob)
@@ -114,7 +115,7 @@ class DynamicWindowApproach:
     
     def predict_trajectory(self, x_init, v, y):
         """
-        predict trajectory with an input
+        Predict next trajectory
         """
 
         x = np.array(x_init)
@@ -130,7 +131,7 @@ class DynamicWindowApproach:
 
     def _motion(self, x, u, dt):
         """
-        motion model
+        Calculate motion model
         """
         x[0] += u[0] * math.cos(x[2]) * dt
         x[1] += u[0] * math.sin(x[2]) * dt

@@ -1,6 +1,5 @@
 import numpy as np
 import math
-from util import Path
 
 class Course:
     def __init__(self, 
@@ -74,3 +73,12 @@ class Course:
                         [left_ob_x, nearest_ob_y + ob_interval * 2, self.obstacle_width, self.obstacle_height]
                         ])
         return ob
+    
+
+class Path:
+    def __init__(self, length, width, center_line):
+        self.right_bound = np.array([])
+        self.left_bound = np.array([])
+        self.center_line = center_line
+        self.width = width
+        self.length = length
