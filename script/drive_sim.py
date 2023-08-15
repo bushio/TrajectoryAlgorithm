@@ -23,7 +23,10 @@ class DriveSim:
         self.plot_x_min = cfg.plot_x_min
         self.plot_x_max = cfg.plot_x_max
         
-        self.inital_pose, self.goal, self.path = self._generate_path(road_pattern=0) 
+        ## Generate Path
+        self.inital_pose, self.goal, self.path = self._generate_path(road_pattern=0)        
+
+        ## Generate Obstacle 
         self.obstacle = self._generate_obstacle()
         
     def get_initial_pose(self):
@@ -111,25 +114,23 @@ class DriveSim:
         plt.plot(path.right_bound[:, 0], path.right_bound[:, 1], linewidth=4, color="black")
 
     def _generate_path(self, road_pattern=0):
-        path = Path()
+        
         
         course_angle = 90
         self.path_radian = np.radians(course_angle)
 
         if road_pattern == 0:
-            road_center = 7.5
-            road_width = 5.0
-            road_length = 30.0
-            point_num = int(road_length * 5)
-            longitudinal_interval = float(road_length/ point_num)
+            path = Path(length = 30.0, width = 5.0, center_line = 7.5)
+            point_num = int(path.length * 5)
+            longitudinal_interval = float(path.length/ point_num)
             
             # initial state [x(m), y(m), yaw(rad), v(m/s), omega(rad/s)]
-            initial_pose = np.array([road_center, 0.0, math.pi / 2.0, 0.0, 0.0])
-            goal_pose = np.array([road_center, 18])
-            x1 = [road_center - road_width / 2.0 for i in range(point_num)]
+            initial_pose = np.array([path.center_line, 0.0, math.pi / 2.0, 0.0, 0.0])
+            goal_pose = np.array([path.center_line, 18])
+            x1 = [path.center_line - path.width / 2.0 for i in range(point_num)]
             y1 = [self.plot_y_min + (i * longitudinal_interval) for i in range(point_num)]
 
-            x2 = [road_center + road_width / 2.0 for i in range(point_num)]
+            x2 = [path.center_line + path.width / 2.0 for i in range(point_num)]
             y2 = [self.plot_y_min + (i * longitudinal_interval) for i in range(point_num)]
             
             path.left_bound = np.array(list(zip(x1, y1)))
