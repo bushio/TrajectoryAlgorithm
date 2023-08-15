@@ -19,13 +19,20 @@ class Course:
         self.x_min = xmin
         self.y_max = ymax
         self.x_max = xmax
+        
+        self.obstacle_width = 2.5
+        self.obstacle_height = 0.5
+        
         self.point_interval = point_interval
         self.course_angle = course_angle
         self.path_radian = np.radians(self.course_angle)
+        
+        ## Generate course when the instance is generated.
+        self.initial_pose, self.goal_pose, self.path = self._generate_path()
+        self.obstacles = self._generate_obstacle()
+        
     def get_course(self):
-        initial_pose, goal_pose, path = self._generate_path()
-        obstacles = self._generate_obstacle()
-        return initial_pose, goal_pose, path, obstacles
+        return self.initial_pose, self.goal_pose, self.path, self.obstacles
         
     def _generate_path(self):
         if self.path_pattern == 0:
@@ -48,11 +55,22 @@ class Course:
         return initial_pose, goal_pose, path
 
     def _generate_obstacle(self):
+        
         if self.obstacle_pattern ==0:
-            obstacle_width = 2.5
-            obstacle_height = 0.5
-            ob = np.array([[6.25, 5.25, obstacle_width, obstacle_height, self.path_radian],
-                        [8.75, 10.25, obstacle_width, obstacle_height, self.path_radian],
-                        [6.25, 15.25, obstacle_width, obstacle_height, self.path_radian]
+            left_ob_x = self.path.center_line - self.path.width / 4
+            right_ob_x = self.path.center_line + self.path.width / 4
+            nearest_ob_y = 5.25
+            ob_interval = 7.5
+            ob = np.array([[left_ob_x, nearest_ob_y, self.obstacle_width, self.obstacle_height],
+                        [right_ob_x, nearest_ob_y + ob_interval, self.obstacle_width, self.obstacle_height]
+                        ])
+        else:
+            left_ob_x = self.path.center_line - self.path.width / 4
+            right_ob_x = self.path.center_line + self.path.width / 4
+            nearest_ob_y = 5.25
+            ob_interval = 5
+            ob = np.array([[left_ob_x, nearest_ob_y, self.obstacle_width, self.obstacle_height],
+                        [right_ob_x, nearest_ob_y + ob_interval, self.obstacle_width, self.obstacle_height],
+                        [left_ob_x, nearest_ob_y + ob_interval * 2, self.obstacle_width, self.obstacle_height]
                         ])
         return ob
