@@ -165,7 +165,7 @@ class DynamicWindowApproach:
 
     def _calc_obstacle_cost(self, trajectory, objects, dist_threshold=5.0, penalty=-1):        
         object_xy = objects[:, 0:2]
-        object_r = 1.5
+        object_r = 2.0
         
         min_dist = float("Inf")
         if penalty == -1:

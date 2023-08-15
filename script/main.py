@@ -17,9 +17,6 @@ from dynamic_window_approach import DynamicWindowApproach
 show_animation = True
 
 def main(cfg):
-    gx = 10.0
-    gy=10.0
-    
     print(__file__ + " start!!")
     
     game = DriveSim(cfg)
