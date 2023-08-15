@@ -165,7 +165,8 @@ class DynamicWindowApproach:
 
     def _calc_obstacle_cost(self, trajectory, objects, dist_threshold=5.0, penalty=-1):        
         object_xy = objects[:, 0:2]
-        object_wh = objects[:, 2:4]
+        object_r = 1.5
+        
         min_dist = float("Inf")
         if penalty == -1:
             penalty = float("Inf")
@@ -182,34 +183,16 @@ class DynamicWindowApproach:
             mask = dist < dist_threshold
             object_xy_mask = object_xy[mask, :]
             
+            if not object_xy_mask.any():
+                dist = 1000
+
             if min_dist < np.min(dist):
                 min_dist = dist
-
-            if not object_xy_mask.any():
-                continue
-            
-            object_wh_mask = object_wh[mask, :]
-            
-            ## Rotation matrix
-            #yaw = tp[2]
-            #rot = np.array([[np.cos(yaw), -np.sin(yaw)], [np.sin(yaw), np.cos(yaw)]])
-            #rot_size = np.array([[np.cos(yaw), 0], [0, np.sin(yaw)]])
-            
-
-            #object_xy_new = np.dot(rot, object_xy_mask.T).transpose(1,0)
-            object_xy_new = object_xy_mask - tp[0:2]
-            #object_wh_mask = np.abs(np.dot(rot_size, object_wh_mask.T).transpose(1,0))
-
-            object_xy_new_upper_right = object_xy_new + object_wh_mask / 2
-            object_xy_new_bottom_left = object_xy_new - object_wh_mask / 2
-            
-            right_check = object_xy_new_bottom_left[:, 0]>= self.robot_width / 2
-            left_check = object_xy_new_upper_right[:, 0] <= -self.robot_width / 2
-            top_check = object_xy_new_bottom_left[:, 1] >= self.robot_length / 2
-            bottom_check = object_xy_new_upper_right[:, 1] <= -self.robot_length / 2
-            
-            check = np.all(np.logical_or(np.logical_or(top_check, bottom_check), np.logical_or(right_check, left_check)))
-            if not check:
+                
+            collision_mask = object_r > dist
+            object_xy_collision = object_xy[collision_mask, :]
+            check = object_xy_collision.any()
+            if check:
                 return penalty
         return 1.0 / min_dist  # OK
         
