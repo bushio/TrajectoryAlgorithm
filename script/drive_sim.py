@@ -23,8 +23,12 @@ class DriveSim:
         self.plot_x_min = cfg.plot_x_min
         self.plot_x_max = cfg.plot_x_max
         
+        ## Path parameter
+        self.point_interval = cfg.point_interval
+        
+        
         ## Generate Path
-        self.inital_pose, self.goal, self.path = self._generate_path(road_pattern=0)        
+        self.inital_pose, self.goal, self.path = self._generate_path(self.point_interval)        
 
         ## Generate Obstacle 
         self.obstacle = self._generate_obstacle()
@@ -113,7 +117,7 @@ class DriveSim:
         plt.plot(path.left_bound[:, 0], path.left_bound[:, 1], linewidth=4, color="black")
         plt.plot(path.right_bound[:, 0], path.right_bound[:, 1], linewidth=4, color="black")
 
-    def _generate_path(self, road_pattern=0):
+    def _generate_path(self, point_interval=0.2, road_pattern=0):
         
         
         course_angle = 90
@@ -121,7 +125,7 @@ class DriveSim:
 
         if road_pattern == 0:
             path = Path(length = 30.0, width = 5.0, center_line = 7.5)
-            point_num = int(path.length * 5)
+            point_num = int(path.length * int(1 / point_interval))
             longitudinal_interval = float(path.length/ point_num)
             
             # initial state [x(m), y(m), yaw(rad), v(m/s), omega(rad/s)]
