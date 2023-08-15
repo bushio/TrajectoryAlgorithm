@@ -18,10 +18,11 @@ class DriveSim:
             self.robot_type = RobotType.rectangle
         
         ## World parameter
-        self.plot_y_min = -2
-        self.plot_y_max = 20
-        self.plot_x_min = -2
-        self.plot_x_max = 20
+        self.plot_y_min = cfg.plot_y_min
+        self.plot_y_max = cfg.plot_y_max
+        self.plot_x_min = cfg.plot_x_min
+        self.plot_x_max = cfg.plot_x_max
+        
         self.inital_pose, self.goal, self.path = self._generate_path(road_pattern=0) 
         self.obstacle = self._generate_obstacle()
         
