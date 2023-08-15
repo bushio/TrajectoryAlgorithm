@@ -4,6 +4,7 @@ import math
 import numpy as np
 from robot_type import RobotType
 from util import Path
+from course import Course
 
 class DriveSim:
     def __init__(self, cfg):
@@ -26,12 +27,14 @@ class DriveSim:
         ## Path parameter
         self.point_interval = cfg.point_interval
         
-        
+        course_generater = Course(xmin=self.plot_x_min,
+                              ymin=self.plot_y_min,
+                              xmax=self.plot_x_max,
+                              ymax=self.plot_y_max,
+                              point_interval=self.point_interval
+                              )
         ## Generate Path
-        self.inital_pose, self.goal, self.path = self._generate_path(self.point_interval)        
-
-        ## Generate Obstacle 
-        self.obstacle = self._generate_obstacle()
+        self.inital_pose, self.goal, self.path, self.obstacle = course_generater.get_course()       
         
     def get_initial_pose(self):
         return self.inital_pose
