@@ -26,13 +26,16 @@ class DynamicWindowApproach:
         self.v_resolution = config.v_resolution
         self.yaw_rate_resolution = config.yaw_rate_resolution
         
-        
-        self.obstacle_cost_gain = config.obstacle_cost_gain
+        ## Cost weights
         self.speed_cost_gain = config.speed_cost_gain
         self.to_goal_cost_gain = config.to_goal_cost_gain
+        self.obstacle_cost_gain = config.obstacle_cost_gain
+        self.path_cost_gain = config.path_cost_gain
         
+        ## Trajectory precition time 
         self.predict_time = config.predict_time
     
+        ## Robot param
         self.robot_radius = config.robot_radius # [m]
         self.robot_width = config.robot_width  # [m]
         self.robot_length = config.robot_length  # [m]
@@ -90,8 +93,7 @@ class DynamicWindowApproach:
                 to_goal_cost = self.to_goal_cost_gain * self._calc_target_heading_cost(trajectory[-1], goal)
                 speed_cost = self.speed_cost_gain * (self.max_speed - trajectory[-1, 3])
                 ob_cost = self.obstacle_cost_gain * self._calc_obstacle_cost(trajectory, ob)
-                
-                path_cost = self.obstacle_cost_gain * self._calc_path_cost(trajectory, path)
+                path_cost = self.path_cost_gain * self._calc_path_cost(trajectory, path)
 
                 final_cost = to_goal_cost + speed_cost + ob_cost + path_cost
 
