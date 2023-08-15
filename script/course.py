@@ -10,7 +10,7 @@ class Course:
                  point_interval=0.2, 
                  course_angle=90,
                  path_pattern=0,
-                 obstacle_pattern =0
+                 obstacle_pattern = 1
                  ):
         self.path_pattern = path_pattern
         self.obstacle_pattern = obstacle_pattern
@@ -62,6 +62,14 @@ class Course:
             ob_interval = 7.5
             ob = np.array([[left_ob_x, nearest_ob_y, self.obstacle_width, self.obstacle_height],
                         [right_ob_x, nearest_ob_y + ob_interval, self.obstacle_width, self.obstacle_height]
+                        ])
+        elif self.obstacle_pattern ==1:
+            left_ob_x = self.path.center_line - self.path.width / 4
+            right_ob_x = self.path.center_line + self.path.width / 4
+            nearest_ob_y = 5.25
+            ob_interval = 7.5
+            ob = np.array([[right_ob_x, nearest_ob_y, self.obstacle_width, self.obstacle_height],
+                        [left_ob_x, nearest_ob_y + ob_interval, self.obstacle_width, self.obstacle_height]
                         ])
         else:
             left_ob_x = self.path.center_line - self.path.width / 4

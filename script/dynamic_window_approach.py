@@ -10,39 +10,39 @@ import math
 import numpy as np
 
 class DynamicWindowApproach:
-    def __init__(self, config):
+    def __init__(self, cfg):
         ## Robot parameter
-        self.min_speed = config.min_speed
-        self.max_speed = config.max_speed
-        self.max_yaw_rate = config.max_yaw_rate
-        self.max_yaw_rate = config.max_yaw_rate
-        self.max_accel = config.max_accel
-        self.max_delta_yaw_rate = config.max_delta_yaw_rate
+        self.min_speed = cfg.min_speed
+        self.max_speed = cfg.max_speed
+        self.max_yaw_rate = cfg.max_yaw_rate
+        self.max_yaw_rate = cfg.max_yaw_rate
+        self.max_accel = cfg.max_accel
+        self.max_delta_yaw_rate = cfg.max_delta_yaw_rate
         
-        self.dt = config.dt
+        self.dt = cfg.dt
         
         ## Search range
-        self.v_resolution = config.v_resolution
-        self.yaw_rate_resolution = config.yaw_rate_resolution
+        self.v_resolution = cfg.v_resolution
+        self.yaw_rate_resolution = cfg.yaw_rate_resolution
         
         ## Cost weights
-        self.speed_cost_gain = config.speed_cost_gain
-        self.to_goal_cost_gain = config.to_goal_cost_gain
-        self.obstacle_cost_gain = config.obstacle_cost_gain
-        self.path_cost_gain = config.path_cost_gain
+        self.speed_cost_gain = cfg.speed_cost_gain
+        self.to_goal_cost_gain = cfg.to_goal_cost_gain
+        self.obstacle_cost_gain = cfg.obstacle_cost_gain
+        self.path_cost_gain = cfg.path_cost_gain
         
         # If the distance between object and robot more than threshold , cost is ignored.
-        self.ob_dist_threshold = config.ob_dist_threshold
-        self.path_dist_threshold = config.path_dist_threshold
+        self.ob_dist_threshold = cfg.ob_dist_threshold
+        self.path_dist_threshold = cfg.path_dist_threshold
         
         ## Trajectory precition time 
-        self.predict_time = config.predict_time
+        self.predict_time = cfg.predict_time
     
         ## Robot param
-        self.robot_radius = config.robot_radius # [m]
-        self.robot_width = config.robot_width  # [m]
-        self.robot_length = config.robot_length  # [m]
-        self.robot_stuck_flag_cons = config.robot_stuck_flag_cons
+        self.robot_radius = cfg.robot_radius # [m]
+        self.robot_width = cfg.robot_width  # [m]
+        self.robot_length = cfg.robot_length  # [m]
+        self.robot_stuck_flag_cons = cfg.robot_stuck_flag_cons
         
     def get_next_step(self, x, goal, obstacle, path):
         """
