@@ -31,6 +31,10 @@ class DynamicWindowApproach:
         self.obstacle_cost_gain = config.obstacle_cost_gain
         self.path_cost_gain = config.path_cost_gain
         
+        # If the distance between object and robot more than threshold , cost is ignored.
+        self.ob_dist_threshold = config.ob_dist_threshold
+        self.path_dist_threshold = config.path_dist_threshold
+        
         ## Trajectory precition time 
         self.predict_time = config.predict_time
     

@@ -1,6 +1,4 @@
 import math
-import numpy as np
-from robot_type import RobotType
 
 class Config:
     """
@@ -11,7 +9,6 @@ class Config:
         ################
         # DWA parameter
         #################
-        
         # robot parameter
         self.max_speed = 1.0  # [m/s]
         self.min_speed = -0.5  # [m/s]
@@ -49,5 +46,6 @@ class Config:
         self.path_cost_gain = 1.0
         self.robot_stuck_flag_cons = 0.001  # constant to prevent robot stucked
         
-
-        
+        # If the distance between object and robot more than threshold , cost is ignored.
+        self.ob_dist_threshold = 5.0
+        self.path_dist_threshold = 5.0
