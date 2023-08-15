@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from config import Config
 
-from course import DriveCourse
+from drive_sim import DriveSim
 from dynamic_window_approach import DynamicWindowApproach
 
 show_animation = True
@@ -22,7 +22,7 @@ def main(cfg):
     
     print(__file__ + " start!!")
     
-    game = DriveCourse(cfg)
+    game = DriveSim(cfg)
     path = game.path
     x = game.get_initial_pose()
     trajectory = np.array(x)

@@ -5,7 +5,7 @@ import numpy as np
 from robot_type import RobotType
 from util import Path
 
-class DriveCourse:
+class DriveSim:
     def __init__(self, cfg):
 
         ## Robot parameter
