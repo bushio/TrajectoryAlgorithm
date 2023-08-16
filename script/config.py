@@ -19,9 +19,9 @@ class Config:
         
         # Matplotlib parameter
         self.plot_y_min = -2
-        self.plot_y_max = 20
-        self.plot_x_min = -2
-        self.plot_x_max = 20
+        self.plot_y_max = 40
+        self.plot_x_min = 0
+        self.plot_x_max = 40
         
         # Path parameter
         self.point_interval = 0.2 #[m]

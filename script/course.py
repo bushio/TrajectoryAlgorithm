@@ -10,7 +10,8 @@ class Course:
                  point_interval=0.2, 
                  course_angle=90,
                  path_pattern=0,
-                 obstacle_pattern = 1
+                 obstacle_pattern = 1,
+                 path_width = 5.0
                  ):
         self.path_pattern = path_pattern
         self.obstacle_pattern = obstacle_pattern
@@ -18,8 +19,12 @@ class Course:
         self.x_min = xmin
         self.y_max = ymax
         self.x_max = xmax
+        self.center_line = (xmax - xmin) / 2.0
         
-        self.obstacle_width = 2.5
+        self.path_length = ymax - ymin
+        self.goal_dist = self.path_length - 5.0
+        self.path_width = path_width
+        
         self.obstacle_height = 0.5
         
         self.point_interval = point_interval
@@ -35,13 +40,13 @@ class Course:
         
     def _generate_path(self):
         if self.path_pattern == 0:
-            path = Path(length = 30.0, width = 5.0, center_line = 7.5)
+            path = Path(length = self.path_length, width = self.path_width, center_line = self.center_line)
             point_num = int(path.length * int(1 / self.point_interval))
             longitudinal_interval = float(path.length/ point_num)
             
             # initial state [x(m), y(m), yaw(rad), v(m/s), omega(rad/s)]
             initial_pose = np.array([path.center_line, 0.0, math.pi / 2.0, 0.0, 0.0])
-            goal_pose = np.array([path.center_line, 18])
+            goal_pose = np.array([path.center_line, 0.0 + self.goal_dist])
             x1 = [path.center_line - path.width / 2.0 for i in range(point_num)]
             y1 = [self.y_min + (i * longitudinal_interval) for i in range(point_num)]
 
@@ -63,13 +68,19 @@ class Course:
             |     |
             |  S  |
             """
-            left_ob_x = self.path.center_line - self.path.width / 4
-            right_ob_x = self.path.center_line + self.path.width / 4
             nearest_ob_y = 5.25
-            ob_interval = 7.5
-            ob = np.array([[left_ob_x, nearest_ob_y, self.obstacle_width, self.obstacle_height],
-                        [right_ob_x, nearest_ob_y + ob_interval, self.obstacle_width, self.obstacle_height]
-                        ])
+            ob_interval = 10.0
+            ob_width = [1.5, 2.0, 2.5]
+            ob = []
+            for ii, w in enumerate(ob_width):
+                if ii % 2 == 0:
+                    x = self.path.left_bound[0] + w / 2.0
+                else:
+                    x = self.path.right_bound[0] - w / 2.0
+                
+                y = nearest_ob_y + ob_interval * ii
+                ob.append([x, y, w, self.obstacle_height])
+            ob = np.array(ob)
 
         elif self.obstacle_pattern ==1:
             """ pattern=1
@@ -80,13 +91,21 @@ class Course:
             |     |
             |  S  |
             """
-            left_ob_x = self.path.center_line - self.path.width / 4
-            right_ob_x = self.path.center_line + self.path.width / 4
             nearest_ob_y = 5.25
-            ob_interval = 7.5
-            ob = np.array([[right_ob_x, nearest_ob_y, self.obstacle_width, self.obstacle_height],
-                        [left_ob_x, nearest_ob_y + ob_interval, self.obstacle_width, self.obstacle_height]
-                        ])
+            ob_interval = 10.0
+            ob_width = [1.5, 2.0, 2.5]
+            ob = []
+            for ii, w in enumerate(ob_width):
+                if ii % 2 == 0:
+                    x = self.path.right_bound[0, 0] - w / 2.0
+                else:
+                    x = self.path.left_bound[0, 0] + w / 2.0
+
+                y = nearest_ob_y + ob_interval * ii
+                ob.append([x, y, w, self.obstacle_height])
+            print(ob)
+            ob = np.array(ob)
+
         else:
             """ pattern=1
             |  G  |
