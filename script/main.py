@@ -18,7 +18,7 @@ from dynamic_window_approach import DynamicWindowApproach
 show_animation = True
 def argparser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--road', help='road pattern', default=0, type=int)
+    parser.add_argument('--course', help='course pattern', default=0, type=int)
     parser.add_argument('--ob', help='object pattern', default=0, type=int)
     args = parser.parse_args() 
     return args
@@ -27,7 +27,7 @@ def main(cfg):
     args = argparser()
     print(__file__ + " start!!")
     
-    game = DriveSim(cfg)
+    game = DriveSim(cfg, path_pattern=args.course, obstacle_pattern=args.ob)
     path = game.path
     x = game.get_initial_pose()
     trajectory = np.array(x)

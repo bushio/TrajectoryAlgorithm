@@ -6,7 +6,7 @@ from robot_type import RobotType
 from course import Course, Path
 
 class DriveSim:
-    def __init__(self, cfg):
+    def __init__(self, cfg, path_pattern=0, obstacle_pattern=0):
 
         ## Robot parameter
         self.robot_radius = cfg.robot_radius # [m]
@@ -30,7 +30,9 @@ class DriveSim:
                               ymin=self.plot_y_min,
                               xmax=self.plot_x_max,
                               ymax=self.plot_y_max,
-                              point_interval=self.point_interval
+                              point_interval=self.point_interval,
+                              path_pattern=path_pattern,
+                              obstacle_pattern=obstacle_pattern
                               )
         ## Generate Path
         self.inital_pose, self.goal, self.path, self.obstacle = course_generater.get_course()       
