@@ -9,14 +9,22 @@ author: Atsushi Sakai (@Atsushi_twi), Göktuğ Karakaşlı
 import math
 import matplotlib.pyplot as plt
 import numpy as np
+import argparse
 from config import Config
 
 from drive_sim import DriveSim
 from dynamic_window_approach import DynamicWindowApproach
 
 show_animation = True
-
+def argparser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--road', help='road pattern', default=0, type=int)
+    parser.add_argument('--ob', help='object pattern', default=0, type=int)
+    args = parser.parse_args() 
+    return args
+    
 def main(cfg):
+    args = argparser()
     print(__file__ + " start!!")
     
     game = DriveSim(cfg)

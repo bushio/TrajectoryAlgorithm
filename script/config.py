@@ -29,8 +29,8 @@ class Config:
         # Robot parameter
         self.robot_type = "rectangle" #  "rectangle" or "circle"
         self.robot_radius = 1.0 # [m]
-        self.robot_width = 1.0  # [m]
-        self.robot_length = 2.0  # [m]
+        self.robot_width = 1.5  # [m]
+        self.robot_length = 3.5  # [m]
         
         ################
         # DWA parameter
