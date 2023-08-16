@@ -27,21 +27,21 @@ def main(cfg):
     args = argparser()
     print(__file__ + " start!!")
     
-    game = DriveSim(cfg, path_pattern=args.course, obstacle_pattern=args.ob)
-    path = game.path
-    x = game.get_initial_pose()
+    env = DriveSim(cfg, path_pattern=args.course, obstacle_pattern=args.ob)
+    path = env.path
+    x = env.get_initial_pose()
     trajectory = np.array(x)
-    goal = game.get_goal_pose()
-    obstacle = game.get_obstacle_pose()
+    goal = env.get_goal_pose()
+    obstacle = env.get_obstacle_pose()
     dwa = DynamicWindowApproach(cfg)
     
     while True:
         u, predicted_trajectory = dwa.get_next_step(x, goal, obstacle, path)
-        x, finish = game.update(x, u, cfg.dt)
+        x, finish = env.update(x, u, cfg.dt)
         trajectory = np.vstack((trajectory, x))  # store state history
 
         if show_animation:
-            game.update_animation(x, obstacle, predicted_trajectory)
+            env.update_animation(x, obstacle, predicted_trajectory)
         
         if finish:
             break
