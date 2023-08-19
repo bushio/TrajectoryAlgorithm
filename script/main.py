@@ -49,7 +49,7 @@ def main(cfg):
         predictor = DynamicWindowApproach(cfg)
     
     while True:
-        u, predicted_trajectory = predictor.get_next_step(x, goal, obstacle, path)
+        u, predicted_trajectory = predictor.get_next_step(x, goal, obstacle, path.left_bound, path.right_bound)
         x, finish = env.update(x, u, cfg.dt)
         trajectory = np.vstack((trajectory, x))  # store state history
 

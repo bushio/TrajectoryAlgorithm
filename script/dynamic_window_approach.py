@@ -46,7 +46,7 @@ class DynamicWindowApproach:
         self.robot_length = cfg.robot_length  # [m]
         self.robot_stuck_flag_cons = cfg.robot_stuck_flag_cons
         
-    def get_next_step(self, x, goal, obstacle, path):
+    def get_next_step(self, x, goal, obstacle, left_bound, right_bound):
         """
         Return next control and trajectory
         """
@@ -54,7 +54,7 @@ class DynamicWindowApproach:
         # Calcuration dynamic window by self property
         motion_dw = self._calc_dynamic_window(x)
         
-        u, trajectory = self.calc_control_and_trajectory(x, motion_dw, goal,  obstacle, path)
+        u, trajectory = self.calc_control_and_trajectory(x, motion_dw, goal,  obstacle, left_bound, right_bound)
         return u, trajectory
     
     
@@ -80,7 +80,7 @@ class DynamicWindowApproach:
         return dw
     
 
-    def calc_control_and_trajectory(self, x, dw, goal, ob, path):
+    def calc_control_and_trajectory(self, x, dw, goal, ob, left_bound, right_bound):
         """
         Calculation final input with dynamic window
         """
@@ -103,7 +103,7 @@ class DynamicWindowApproach:
                     trajectory, ob, dist_threshold=self.ob_dist_threshold, penalty=self.ob_penalty)
                 
                 path_cost = self.path_cost_gain * self._calc_path_cost(
-                        trajectory, path, dist_threshold=self.path_dist_threshold, penalty=self.path_penalty)
+                        trajectory, left_bound, right_bound, dist_threshold=self.path_dist_threshold, penalty=self.path_penalty)
 
                 final_cost = to_goal_cost + speed_cost + ob_cost + path_cost
 
@@ -197,10 +197,10 @@ class DynamicWindowApproach:
         return 1.0 / min_dist  # OK
         
 
-    def _calc_path_cost(self, trajectory, path, path_point_size=0.1, dist_threshold=5.0, penalty=-1):
+    def _calc_path_cost(self, trajectory, left_bound, right_bound, path_point_size=0.1, dist_threshold=5.0, penalty=-1):
         
-        left_bound_vec = np.diff(path.left_bound, axis=0)
-        right_bound_vec = np.diff(path.right_bound, axis=0)
+        left_bound_vec = np.diff(left_bound, axis=0)
+        right_bound_vec = np.diff(right_bound, axis=0)
 
         if penalty == -1:
             penalty = float("Inf")
@@ -211,8 +211,8 @@ class DynamicWindowApproach:
         ## and if teh outer product is <  0, the point is to the right of the bound.
         for idx, tp in enumerate(trajectory):
             tp_point = np.array([tp[0], tp[1]])
-            tp_vec_left = tp_point - path.left_bound[:, 0:2]
-            tp_vec_right = tp_point - path.right_bound[:, 0:2]
+            tp_vec_left = tp_point - left_bound[:, 0:2]
+            tp_vec_right = tp_point - right_bound[:, 0:2]
             left_check = np.cross(left_bound_vec, tp_vec_left[:len(left_bound_vec), 0:2])
             right_check = np.cross(right_bound_vec, tp_vec_right[:len(right_bound_vec), 0:2])
             
@@ -225,8 +225,8 @@ class DynamicWindowApproach:
             ## Calc distance between trajectory_pose and lef_bound using traiangle area 
             for ii, v in enumerate(left_bound_vec):
                 traiangle_bottom = np.hypot(v[0], v[1])
-                p1 = path.left_bound[ii]
-                p2 = path.left_bound[ii + 1]
+                p1 = left_bound[ii]
+                p2 = left_bound[ii + 1]
                 triangle_area = self._calcTriangleArea(tp[0], tp[1], p1[0], p1[1], p2[0], p2[1])
                 dist = (triangle_area * 2) / traiangle_bottom
                 if min_dist > dist:
@@ -235,8 +235,8 @@ class DynamicWindowApproach:
             ## Calc distance between trajectory_pose and right_bound using traiangle area 
             for ii, v in enumerate(right_bound_vec):
                 traiangle_bottom = np.hypot(v[0], v[1])
-                p1 = path.right_bound[ii]
-                p2 = path.right_bound[ii + 1]
+                p1 = right_bound[ii]
+                p2 = right_bound[ii + 1]
                 triangle_area = self._calcTriangleArea(tp[0], tp[1], p1[0], p1[1], p2[0], p2[1])
                 dist = (triangle_area * 2) / traiangle_bottom
                 
