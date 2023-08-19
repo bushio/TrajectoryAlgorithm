@@ -39,7 +39,7 @@ class Course:
         return self.initial_pose, self.goal_pose, self.path, self.obstacles
         
     def _generate_path(self):
-
+        
         path = Path(length = self.path_length, width = self.path_width, center_line = self.center_line)
         point_num = int(path.length * int(1 / self.point_interval))
         longitudinal_interval = float(path.length/ point_num)
@@ -47,11 +47,11 @@ class Course:
         # initial state [x(m), y(m), yaw(rad), v(m/s), omega(rad/s)]
         initial_pose = np.array([path.center_line, 0.0, math.pi / 2.0, 0.0, 0.0])
         goal_pose = np.array([path.center_line, 0.0 + self.goal_dist])
-        x1 = [path.center_line - path.width / 2.0 for i in range(point_num)]
-        y1 = [self.y_min + (i * longitudinal_interval) for i in range(point_num)]
+        x1 = [path.center_line - path.width / 2.0, path.center_line - path.width / 2.0, path.center_line - path.width / 2.0]
+        y1 = [self.y_min, self.y_min + self.path_length, self.y_min + self.path_length*2]
 
-        x2 = [path.center_line + path.width / 2.0 for i in range(point_num)]
-        y2 = [self.y_min + (i * longitudinal_interval) for i in range(point_num)]
+        x2 = [path.center_line + path.width / 2.0 ,path.center_line + path.width / 2.0]
+        y2 = [self.y_min, self.y_min + self.path_length]
         
         path.left_bound = np.array(list(zip(x1, y1)))
         path.right_bound = np.array(list(zip(x2, y2)))

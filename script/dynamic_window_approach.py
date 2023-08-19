@@ -199,49 +199,56 @@ class DynamicWindowApproach:
 
     def _calc_path_cost(self, trajectory, path, path_point_size=0.1, dist_threshold=5.0, penalty=-1):
         
-        path_points = np.concatenate([path.left_bound, path.right_bound])
-        object_xy = path_points[:, 0:2]
-        points_size = np.array([path_point_size, path_point_size])
+        left_bound_vec = np.diff(path.left_bound, axis=0)
+        right_bound_vec = np.diff(path.right_bound, axis=0)
 
         if penalty == -1:
             penalty = float("Inf")
         min_dist = float("Inf")
 
         ## Distance between object and trajectory points
+        ## If teh outer product is >  0, the point is to the left of the bound.
+        ## and if teh outer product is <  0, the point is to the right of the bound.
         for idx, tp in enumerate(trajectory):
-            ox = path_points[:, 0]
-            oy = path_points[:, 1]
-            dx = tp[0] - ox
-            dy = tp[1] - oy
-            dist = np.hypot(dx, dy)
+            tp_point = np.array([tp[0], tp[1]])
+            tp_vec_left = tp_point - path.left_bound[:, 0:2]
+            tp_vec_right = tp_point - path.right_bound[:, 0:2]
+            left_check = np.cross(left_bound_vec, tp_vec_left[:len(left_bound_vec), 0:2])
+            right_check = np.cross(right_bound_vec, tp_vec_right[:len(right_bound_vec), 0:2])
+            
+            ## If any points is beyond left_bound.
+            if np.any(left_check > 0):
+                return penalty
+            if np.any(right_check < 0):
+                return penalty
+            
+            ## Calc distance between trajectory_pose and lef_bound using traiangle area 
+            for ii, v in enumerate(left_bound_vec):
+                traiangle_bottom = np.hypot(v[0], v[1])
+                p1 = path.left_bound[ii]
+                p2 = path.left_bound[ii + 1]
+                triangle_area = self._calcTriangleArea(tp[0], tp[1], p1[0], p1[1], p2[0], p2[1])
+                dist = (triangle_area * 2) / traiangle_bottom
+                if min_dist > dist:
+                    min_dist = dist
 
-            # Mask with distance
-            mask = dist < dist_threshold
-            object_xy_mask = object_xy[mask, :]
-
-            if min_dist < np.min(dist):
-                min_dist = dist
-
-            if not object_xy_mask.any():
-                continue
+            ## Calc distance between trajectory_pose and right_bound using traiangle area 
+            for ii, v in enumerate(right_bound_vec):
+                traiangle_bottom = np.hypot(v[0], v[1])
+                p1 = path.right_bound[ii]
+                p2 = path.right_bound[ii + 1]
+                triangle_area = self._calcTriangleArea(tp[0], tp[1], p1[0], p1[1], p2[0], p2[1])
+                dist = (triangle_area * 2) / traiangle_bottom
                 
-            object_xy_new = object_xy_mask - tp[0:2]
-            #object_xy_new = object_xy_new @ rot
-            object_xy_new_upper_right = object_xy_new + points_size
-            object_xy_new_bottom_left = object_xy_new - points_size
-            
-            right_check = object_xy_new_bottom_left[:, 0] >= self.robot_width / 2
-            left_check = object_xy_new_upper_right[:, 0] <= -self.robot_width / 2
-            top_check = object_xy_new_bottom_left[:, 1] >= self.robot_length / 2
-            bottom_check = object_xy_new_upper_right[:, 1] <= -self.robot_length / 2
-            
-            check = np.prod(np.logical_or(np.logical_or(top_check, bottom_check), np.logical_or(right_check, left_check)))
-            
-            if not check:
-                #print("collision")
-                return penalty/(idx + 1)
+                if min_dist > dist:
+                    min_dist = dist
             
         return 1.0 / min_dist  # OK
+    
+
+    def _calcTriangleArea(self, x1, y1, x2, y2, x3, y3):
+        return 0.5 * abs(x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2))
+        
  
             
 
